@@ -1,20 +1,22 @@
 import { useEffect, useRef } from 'react';
 import WorldWind from 'worldwindjs';
 import { createOverlayLayer } from '../layers/createOverlayLayer';
+import { createDefenseDomes } from '../layers/createDefenseDomes';
+import { createSensorLayer } from '../layers/createSensorLayer';
 
 /**
  * Globe component that renders an interactive 3D Earth using NASA Web WorldWind.
  *
  * @param {Object} props
- * @param {boolean} props.overlayEnabled - Whether to show the overlay layer
+ * @param {Object} props.layerStates - Object containing enabled state for each layer
  */
-function Globe({ overlayEnabled = false }) {
+function Globe({ layerStates = {} }) {
   // Ref to access the canvas DOM element
   const canvasRef = useRef(null);
   // Ref to store the WorldWindow instance (prevents re-initialization)
   const wwRef = useRef(null);
-  // Ref to store the overlay layer for toggling
-  const overlayLayerRef = useRef(null);
+  // Refs to store all layers for toggling
+  const layersRef = useRef({});
 
   // Initialize WorldWind on mount
   useEffect(() => {
@@ -33,43 +35,81 @@ function Globe({ overlayEnabled = false }) {
     const wwd = new WorldWind.WorldWindow(canvas);
     wwRef.current = wwd;
 
-    // Layers are rendered in order: first added = bottom, last added = top
-    wwd.addLayer(new WorldWind.StarFieldLayer());
-    wwd.addLayer(new WorldWind.BMNGLayer());
-    wwd.addLayer(new WorldWind.AtmosphereLayer());
+    // Base layers (always visible)
+    const starFieldLayer = new WorldWind.StarFieldLayer();
+    const atmosphereLayer = new WorldWind.AtmosphereLayer();
 
-    // Create overlay layer (initially hidden)
+    // Enhanced atmosphere for better visuals
+    atmosphereLayer.lightLocation = WorldWind.SunPosition.getAsGeographicLocation(new Date());
+
+    wwd.addLayer(starFieldLayer);
+    wwd.addLayer(new WorldWind.BMNGLayer());
+    wwd.addLayer(atmosphereLayer);
+
+    // Create defense dome layers
+    const defenseDomes = createDefenseDomes();
+    layersRef.current.terminal = defenseDomes.terminal;
+    layersRef.current.midcourse = defenseDomes.midcourse;
+    layersRef.current.spaceBased = defenseDomes.spaceBased;
+
+    // Add defense layers (initially hidden)
+    defenseDomes.terminal.enabled = false;
+    defenseDomes.midcourse.enabled = false;
+    defenseDomes.spaceBased.enabled = false;
+    wwd.addLayer(defenseDomes.terminal);
+    wwd.addLayer(defenseDomes.midcourse);
+    wwd.addLayer(defenseDomes.spaceBased);
+
+    // Create sensor layer (initially hidden)
+    const sensorLayer = createSensorLayer();
+    sensorLayer.enabled = false;
+    layersRef.current.sensors = sensorLayer;
+    wwd.addLayer(sensorLayer);
+
+    // Create overlay layer (grid/boundaries, initially hidden)
     const overlayLayer = createOverlayLayer();
     overlayLayer.enabled = false;
-    overlayLayerRef.current = overlayLayer;
+    layersRef.current.overlay = overlayLayer;
     wwd.addLayer(overlayLayer);
 
-    // Set initial camera position
-    wwd.navigator.range = 20000000;
-    wwd.navigator.tilt = 50;
+    // Set optimal camera position for dramatic view
+    wwd.navigator.range = 15000000; // Closer view
+    wwd.navigator.tilt = 65; // More dramatic tilt
+    wwd.navigator.heading = 0;
 
-    // Center on North America for better view of US boundary
-    wwd.navigator.lookAtLocation.latitude = 35;
-    wwd.navigator.lookAtLocation.longitude = -100;
+    // Center on CONUS with slight offset for visual appeal
+    wwd.navigator.lookAtLocation.latitude = 38;
+    wwd.navigator.lookAtLocation.longitude = -97;
+
+    // Enable depth testing for proper layer rendering
+    wwd.depthBits = 24;
 
     wwd.redraw();
 
     return () => {
       wwRef.current = null;
-      overlayLayerRef.current = null;
+      layersRef.current = {};
     };
   }, []);
 
-  // Toggle overlay layer when prop changes
+  // Update layer visibility when layerStates changes
   useEffect(() => {
-    const overlayLayer = overlayLayerRef.current;
     const wwd = wwRef.current;
+    const layers = layersRef.current;
 
-    if (overlayLayer && wwd) {
-      overlayLayer.enabled = overlayEnabled;
-      wwd.redraw();
+    if (!wwd || !layers) {
+      return;
     }
-  }, [overlayEnabled]);
+
+    // Update each layer's enabled state
+    Object.keys(layerStates).forEach((layerId) => {
+      if (layers[layerId]) {
+        layers[layerId].enabled = layerStates[layerId];
+      }
+    });
+
+    wwd.redraw();
+  }, [layerStates]);
 
   return (
     <canvas

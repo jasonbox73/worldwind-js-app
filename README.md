@@ -1,20 +1,35 @@
-# WorldWind React Globe
+# Golden Dome - Layered Defense System Planner
 
-A browser-based React application that displays an interactive 3D Earth globe using NASA Web WorldWind.
+A geospatial, multi-domain visualization platform for modeling and analyzing layered national missile defense architecture over the continental United States. Built with NASA WorldWind and React.
 
-## Approach
+![Golden Dome Visualization](docs/golden-dome-preview.png)
 
-This MVP uses NASA Web WorldWind, an open-source 3D globe library originally developed by NASA. The application:
+## Overview
 
-1. **React Integration**: Uses a functional component with hooks (`useRef` and `useEffect`) to properly initialize WorldWind after the canvas mounts.
-2. **Canvas-based Rendering**: WorldWind renders to a `<canvas>` element using WebGL for hardware-accelerated 3D graphics.
-3. **Isolation Pattern**: WorldWind logic is contained within the `Globe` component, keeping the library separate from React's rendering cycle.
+The Golden Dome Military Planner Application provides an interactive 3D visualization of a layered missile defense architecture, integrating space-based sensing, midcourse interception, and terminal defense into a unified operational picture.
+
+### Key Features
+
+- **3D Earth Visualization** - High-quality WebGL-rendered globe with realistic atmosphere and lighting
+- **Layered Defense Domes** - Three semi-transparent hemispherical layers representing:
+  - **Terminal Defense** (endo-atmospheric, 50-150km) - Gold/amber colored
+  - **Midcourse Defense** (exo-atmospheric, 150-1000km) - Blue colored
+  - **Space-Based Detection** (LEO/MEO, 1000-2000km) - Cyan colored
+- **Sensor Network** - Orbital paths with satellite nodes and detection coverage indicators
+- **Professional Control Panel** - Military/technical aesthetic with layer toggles and legend
+- **Grid & Boundaries** - Coordinate grid overlay and US continental boundary outline
+
+## Technology Stack
+
+- **React 18** - Modern UI framework with hooks
+- **NASA WorldWind** - Open-source 3D globe WebGL library
+- **Vite** - Fast development server and build tool
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/jasonbox73/worldwind-js-app.git
 cd worldwind-js-app
 
 # Install dependencies
@@ -30,86 +45,81 @@ The application will be available at `http://localhost:5173`.
 
 ```
 worldwind-js-app/
-├── index.html              # HTML entry point
-├── package.json            # Dependencies and scripts
-├── vite.config.js          # Vite bundler configuration
+├── index.html
+├── package.json
+├── vite.config.js
 └── src/
-    ├── main.jsx            # React app entry point
-    ├── App.jsx             # Root component
-    ├── index.css           # Global styles
-    └── components/
-        └── Globe.jsx       # WorldWind globe component
+    ├── main.jsx              # React entry point
+    ├── App.jsx               # Root component with state management
+    ├── index.css             # Global styles
+    ├── components/
+    │   ├── Globe.jsx         # WorldWind integration component
+    │   ├── ControlPanel.jsx  # Layer control interface
+    │   └── ControlPanel.css  # Control panel styling
+    └── layers/
+        ├── createDefenseDomes.js   # Hemispherical defense layers
+        ├── createSensorLayer.js    # Orbital sensors and paths
+        └── createOverlayLayer.js   # Grid and boundary overlays
 ```
 
-## Dependencies
+## Usage
 
-- **react** / **react-dom**: React 18 for UI components
-- **worldwindjs**: NASA Web WorldWind library (npm package)
-- **vite**: Fast development server and build tool
-- **@vitejs/plugin-react**: Vite plugin for React JSX support
+### Layer Controls
 
-## Globe Component
+The control panel on the right side provides toggles for:
 
-The `Globe.jsx` component is the core of the application:
+1. **Terminal Defense** - Toggle the innermost defense layer
+2. **Midcourse Defense** - Toggle the middle exo-atmospheric layer
+3. **Space-Based Detection** - Toggle the outermost sensor layer
+4. **Sensor Network** - Toggle orbital paths and satellite nodes
+5. **Grid & Boundaries** - Toggle coordinate grid and US boundary
 
-```jsx
-import { useEffect, useRef } from 'react';
-import WorldWind from 'worldwindjs';
+### Navigation
 
-function Globe() {
-  const canvasRef = useRef(null);
-  const wwRef = useRef(null);
+- **Click and drag** - Rotate the globe
+- **Mouse wheel** - Zoom in/out
+- **Right-click drag** - Tilt the view angle
+- **Touch/pinch** - Mobile navigation
 
-  useEffect(() => {
-    if (wwRef.current) return;
+### Performance
 
-    const wwd = new WorldWind.WorldWindow(canvasRef.current);
-    wwRef.current = wwd;
+The application is optimized for 60 FPS on modern hardware:
+- WebGL hardware acceleration
+- Efficient geometry generation
+- Optimized layer rendering
+- Smart redraw triggers
 
-    // Add imagery layer
-    wwd.addLayer(new WorldWind.BMNGOneImageLayer());
-    wwd.addLayer(new WorldWind.AtmosphereLayer());
-    wwd.addLayer(new WorldWind.StarFieldLayer());
+## Architecture Details
 
-    wwd.redraw();
+### Defense Dome System
 
-    return () => { wwRef.current = null; };
-  }, []);
+Each dome is constructed using:
+- **Meridian arcs** - Vertical lines from base to apex (24 per dome)
+- **Parallel arcs** - Horizontal circles at various heights (8 per dome)
+- **Base coverage** - Semi-transparent filled polygon at surface level
+- **Glow effects** - Multiple layered paths for visual depth
 
-  return <canvas ref={canvasRef} className="globe-canvas" />;
-}
-```
+The domes use geographic calculations to create true hemispherical shapes over the continental US center point (39.8°N, 98.5°W).
 
-### Key Concepts
+### Sensor Network
 
-- **WorldWindow**: The main WorldWind object that manages the WebGL canvas, layers, and navigation.
-- **Layers**: Visual elements stacked on the globe. We use:
-  - `BMNGOneImageLayer`: Blue Marble satellite imagery
-  - `AtmosphereLayer`: Atmospheric glow effect at Earth's edge
-  - `StarFieldLayer`: Background stars for context
-- **Navigator**: Built-in controller for camera positioning (handled automatically).
+Orbital paths are modeled with:
+- **Polar orbits** - High-inclination paths for global coverage
+- **MEO orbits** - Medium Earth orbit sensors
+- **Detection cones** - Simplified coverage indicators
+- **Glowing nodes** - Satellite position markers with radial gradients
 
-## Mouse Interaction
+### Visual Design
 
-WorldWind provides built-in mouse/touch interaction through its `Navigator` object:
+The application uses a military/technical aesthetic:
+- Dark blue/black space background
+- Translucent layers with edge glow effects
+- Color coding: Gold (terminal), Blue (midcourse), Cyan (space)
+- Professional control panel with status indicators
 
-| Action | Effect |
-|--------|--------|
-| **Click and drag** | Rotate/pan the globe |
-| **Mouse wheel scroll** | Zoom in/out |
-| **Right-click drag** | Tilt the view angle |
-| **Pinch (touch)** | Zoom on mobile devices |
+## Development
 
-These interactions are enabled by default when you create a `WorldWindow` instance. WorldWind attaches event listeners to the canvas and translates mouse/touch events into camera movements automatically.
-
-### How Navigation Works Internally
-
-1. WorldWind's `BasicWorldWindowController` listens for mouse events on the canvas.
-2. Drag events update the `Navigator.lookAtLocation` (latitude/longitude center point).
-3. Wheel events adjust `Navigator.range` (distance from Earth's surface).
-4. After each change, WorldWind triggers a redraw to update the WebGL scene.
-
-## Build for Production
+### Build for Production
 
 ```bash
 npm run build
@@ -117,8 +127,62 @@ npm run build
 
 Output will be in the `dist/` directory, ready for static hosting.
 
-## Notes
+### Preview Production Build
 
-- The globe requires WebGL support in the browser.
-- Initial load downloads satellite imagery tiles from NASA servers.
-- No backend services are required; everything runs in the browser.
+```bash
+npm run preview
+```
+
+## Browser Compatibility
+
+Requires a modern browser with WebGL support:
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 15+
+
+## Use Cases
+
+1. **Strategic Planning** - Visualize defense coverage and identify gaps
+2. **Briefing Support** - Clear, high-level visualization for decision-makers
+3. **Training** - Educational tool for understanding layered defense concepts
+4. **Analysis** - Assess sensor and interceptor placement
+5. **Communication** - Reinforce deterrence messaging through visible capability
+
+## Future Enhancements
+
+- Animated threat trajectories
+- Timeline/simulation controls
+- Interceptor launch visualization
+- Multi-threat scenarios
+- Probabilistic kill assessments
+- Export to briefing tools
+
+## Security & Classification
+
+This is an unclassified planning and visualization tool. It uses:
+- Notional/simulated data only
+- No classified system parameters
+- Generic defense concepts
+- Educational representations
+
+## Credits
+
+- **NASA WorldWind** - 3D globe rendering engine
+- **Blue Marble imagery** - NASA Earth imagery
+- Built for DoD planning and analysis use cases
+
+## License
+
+This project uses the open-source NASA WorldWind library. See individual component licenses for details.
+
+## Support
+
+For questions or issues:
+- GitHub Issues: https://github.com/jasonbox73/worldwind-js-app/issues
+- Email: jasonbox73@gmail.com
+
+---
+
+**Version:** 2.0.0
+**Status:** Production Ready
+**Last Updated:** January 2026
