@@ -43,8 +43,9 @@ function Globe() {
     // Add atmosphere layer on top for realistic edge glow
     wwd.addLayer(new WorldWind.AtmosphereLayer());
 
-    // Set initial camera altitude (meters from Earth's surface)
+    // Set initial camera position
     wwd.navigator.range = 20000000; // ~20,000 km - shows full Earth
+    wwd.navigator.tilt = 50; // Tilt 50° toward horizon to show stars in background
 
     // Trigger initial render
     wwd.redraw();
