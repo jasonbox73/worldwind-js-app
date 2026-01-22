@@ -32,24 +32,24 @@ function Globe() {
     const wwd = new WorldWind.WorldWindow(canvas);
     wwRef.current = wwd;
 
-    // Add a Blue Marble imagery layer (satellite imagery of Earth)
-    // This provides the visual texture for the globe surface
-    const blueMarbleLayer = new WorldWind.BMNGOneImageLayer();
-    wwd.addLayer(blueMarbleLayer);
+    // Layers are rendered in order: first added = bottom, last added = top
+    // Star field goes at the bottom (background)
+    wwd.addLayer(new WorldWind.StarFieldLayer());
 
-    // Add atmosphere layer for realistic edge glow
-    const atmosphereLayer = new WorldWind.AtmosphereLayer();
-    wwd.addLayer(atmosphereLayer);
+    // Add Blue Marble tiled imagery layer (loads progressively as tiles)
+    // BMNGLayer uses tiled images which are more reliable than BMNGOneImageLayer
+    wwd.addLayer(new WorldWind.BMNGLayer());
 
-    // Add star field background for context when zoomed out
-    const starFieldLayer = new WorldWind.StarFieldLayer();
-    wwd.addLayer(starFieldLayer);
+    // Add atmosphere layer on top for realistic edge glow
+    wwd.addLayer(new WorldWind.AtmosphereLayer());
+
+    // Set initial camera altitude (meters from Earth's surface)
+    wwd.navigator.range = 20000000; // ~20,000 km - shows full Earth
 
     // Trigger initial render
     wwd.redraw();
 
     // Cleanup function: Called when component unmounts
-    // WorldWind doesn't have a built-in destroy method, but we clear our reference
     return () => {
       wwRef.current = null;
     };
