@@ -122,6 +122,20 @@ function ControlPanel({ layers, onLayerToggle }) {
                   <span className="legend-label">{layer.name}</span>
                 </div>
               ))}
+              <div className="legend-item">
+                <div
+                  className="legend-color"
+                  style={{ backgroundColor: '#FF5050' }}
+                ></div>
+                <span className="legend-label">Active Tracking</span>
+              </div>
+              <div className="legend-item">
+                <div
+                  className="legend-color"
+                  style={{ backgroundColor: '#80FFD0', opacity: 0.5 }}
+                ></div>
+                <span className="legend-label">Sensor Handoff</span>
+              </div>
             </div>
           </div>
 

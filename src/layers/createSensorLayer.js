@@ -6,6 +6,8 @@ import WorldWind from 'worldwindjs';
  * - Multiple orbital trajectories
  * - Sensor satellite nodes
  * - Detection coverage indicators
+ * - Detection event visualization
+ * - Sensor-to-sensor handoff links
  */
 export function createSensorLayer() {
   const layer = new WorldWind.RenderableLayer('Sensor Network');
@@ -35,6 +37,9 @@ export function createSensorLayer() {
     }
   ];
 
+  // Store all sensor positions for handoff links
+  const allSensorPositions = [];
+
   // Create orbital paths and sensors
   orbits.forEach((orbit, index) => {
     const { path, sensorPositions } = createOrbitalPath(orbit, index * 45);
@@ -42,12 +47,23 @@ export function createSensorLayer() {
     // Add orbital path
     path.forEach(p => layer.addRenderable(p));
 
-    // Add sensor nodes
-    sensorPositions.forEach(pos => {
-      const sensors = createSensorNode(pos, orbit.color);
+    // Add sensor nodes with detection indicators
+    sensorPositions.forEach((pos, sensorIndex) => {
+      const sensors = createSensorNode(pos, orbit.color, orbit.name, sensorIndex);
       sensors.forEach(s => layer.addRenderable(s));
+
+      // Store position for handoff links
+      allSensorPositions.push({ position: pos, color: orbit.color, orbitName: orbit.name });
     });
   });
+
+  // Add detection events (threat tracking indicators over CONUS)
+  const detectionEvents = createDetectionEvents();
+  detectionEvents.forEach(event => layer.addRenderable(event));
+
+  // Add sensor-to-sensor handoff links (connecting sensors with overlapping coverage)
+  const handoffLinks = createHandoffLinks(allSensorPositions);
+  handoffLinks.forEach(link => layer.addRenderable(link));
 
   return layer;
 }
@@ -83,9 +99,162 @@ function createOrbitalPath(orbit, phaseOffset) {
 }
 
 /**
+ * Create detection events - visual indicators of active threat tracking
+ * Shows pulsing markers over potential threat launch areas
+ */
+function createDetectionEvents() {
+  const events = [];
+
+  // Simulate detection events at strategic locations over CONUS
+  const detectionLocations = [
+    { lat: 45, lon: -110, label: 'Track-01' },  // Northern corridor
+    { lat: 35, lon: -95, label: 'Track-02' },   // Central CONUS
+    { lat: 40, lon: -85, label: 'Track-03' }    // Eastern corridor
+  ];
+
+  detectionLocations.forEach((loc, index) => {
+    // Create pulsing detection marker
+    const detectionColor = new WorldWind.Color(1.0, 0.3, 0.3, 0.8); // Red/orange
+
+    // Multiple pulse rings for visual effect
+    for (let pulseLayer = 0; pulseLayer < 3; pulseLayer++) {
+      const pulseRadius = 3 + (pulseLayer * 2); // Expanding rings
+      const pulsePositions = [];
+      const segments = 30;
+
+      for (let i = 0; i <= segments; i++) {
+        const angle = (i / segments) * 360;
+        const bearing = angle * (Math.PI / 180);
+        const angularDist = (pulseRadius * Math.PI) / 180;
+
+        const lat = Math.asin(
+          Math.sin(loc.lat * Math.PI / 180) * Math.cos(angularDist) +
+          Math.cos(loc.lat * Math.PI / 180) * Math.sin(angularDist) * Math.cos(bearing)
+        ) * (180 / Math.PI);
+
+        const lon = loc.lon + Math.atan2(
+          Math.sin(bearing) * Math.sin(angularDist) * Math.cos(loc.lat * Math.PI / 180),
+          Math.cos(angularDist) - Math.sin(loc.lat * Math.PI / 180) * Math.sin(lat * Math.PI / 180)
+        ) * (180 / Math.PI);
+
+        pulsePositions.push(new WorldWind.Position(lat, lon, 200000)); // 200km altitude
+      }
+
+      // Create pulse ring
+      const attrs = new WorldWind.ShapeAttributes(null);
+      attrs.outlineColor = new WorldWind.Color(
+        detectionColor.red,
+        detectionColor.green,
+        detectionColor.blue,
+        detectionColor.alpha * (0.6 - pulseLayer * 0.15)
+      );
+      attrs.outlineWidth = 2.5 - (pulseLayer * 0.5);
+      attrs.drawInterior = false;
+      attrs.applyLighting = false;
+
+      const pulsePath = new WorldWind.Path(pulsePositions, attrs);
+      pulsePath.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
+      pulsePath.followTerrain = false;
+      pulsePath.extrude = false;
+
+      events.push(pulsePath);
+    }
+
+    // Central detection indicator
+    const centerAttrs = new WorldWind.PlacemarkAttributes(null);
+    centerAttrs.imageSource = createGlowCanvas(96,
+      'rgba(255, 80, 80, 1)',
+      'rgba(255, 80, 80, 0)'
+    );
+    centerAttrs.imageScale = 0.4;
+    centerAttrs.imageOffset = new WorldWind.Offset(
+      WorldWind.OFFSET_FRACTION, 0.5,
+      WorldWind.OFFSET_FRACTION, 0.5
+    );
+
+    const centerMark = new WorldWind.Placemark(
+      new WorldWind.Position(loc.lat, loc.lon, 200000),
+      false,
+      centerAttrs
+    );
+    centerMark.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
+    centerMark.label = loc.label;
+    events.push(centerMark);
+  });
+
+  return events;
+}
+
+/**
+ * Create sensor-to-sensor handoff links
+ * Visual representation of tracking continuity between satellites
+ */
+function createHandoffLinks(sensorPositions) {
+  const links = [];
+  const linkColor = new WorldWind.Color(0.5, 1.0, 0.8, 0.3); // Cyan-green
+
+  // Create links between sensors with overlapping coverage areas
+  // Connect sensors from different orbits that have line-of-sight
+  for (let i = 0; i < sensorPositions.length; i++) {
+    for (let j = i + 1; j < sensorPositions.length; j++) {
+      const sensor1 = sensorPositions[i];
+      const sensor2 = sensorPositions[j];
+
+      // Only link sensors from different orbits
+      if (sensor1.orbitName !== sensor2.orbitName) {
+        // Calculate angular distance between sensors
+        const distance = calculateAngularDistance(
+          sensor1.position.latitude, sensor1.position.longitude,
+          sensor2.position.latitude, sensor2.position.longitude
+        );
+
+        // Only create link if sensors are relatively close (within 60 degrees)
+        if (distance < 60) {
+          const linkPositions = [
+            sensor1.position,
+            sensor2.position
+          ];
+
+          // Create semi-transparent dashed link
+          const attrs = new WorldWind.ShapeAttributes(null);
+          attrs.outlineColor = linkColor;
+          attrs.outlineWidth = 1.5;
+          attrs.drawInterior = false;
+          attrs.applyLighting = false;
+          attrs.outlineStippleFactor = 128;
+          attrs.outlineStipplePattern = 0x00FF; // Dashed pattern
+
+          const linkPath = new WorldWind.Path(linkPositions, attrs);
+          linkPath.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
+          linkPath.followTerrain = false;
+          linkPath.extrude = false;
+
+          links.push(linkPath);
+        }
+      }
+    }
+  }
+
+  return links;
+}
+
+/**
+ * Calculate angular distance between two lat/lon points
+ */
+function calculateAngularDistance(lat1, lon1, lat2, lon2) {
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return c * 180 / Math.PI; // Return degrees
+}
+
+/**
  * Create sensor node with detection coverage visualization
  */
-function createSensorNode(position, color) {
+function createSensorNode(position, color, orbitName, sensorIndex) {
   const shapes = [];
 
   // Large outer glow
