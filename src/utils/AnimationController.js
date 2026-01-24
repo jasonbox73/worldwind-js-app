@@ -22,6 +22,7 @@ export class AnimationController {
       return; // Already running
     }
 
+    console.log('[AnimationController] Starting animation loop with', this.animatableObjects.length, 'objects');
     this.isPlaying = true;
     this.lastTimestamp = performance.now();
     this.animate();
@@ -64,6 +65,7 @@ export class AnimationController {
    * Register an object to be animated
    */
   registerAnimatable(obj) {
+    console.log('[AnimationController] Registering object:', obj.constructor.name, 'has update:', typeof obj.update === 'function');
     this.animatableObjects.push(obj);
   }
 
@@ -85,10 +87,32 @@ export class AnimationController {
     if (this.isPlaying) {
       this.animationTime += deltaTime * this.speed;
 
+      // Log every 60 frames (~1 second)
+      const secondChanged = Math.floor(this.animationTime) !== Math.floor(this.animationTime - deltaTime * this.speed);
+      if (secondChanged) {
+        console.log('[AnimationController] Time:', this.animationTime.toFixed(1), 'Objects:', this.animatableObjects.length);
+        if (this.animatableObjects.length === 0) {
+          console.warn('[AnimationController] WARNING: No objects registered!');
+        }
+      }
+
       // Update all animatable objects
-      this.animatableObjects.forEach(obj => {
-        if (obj.update && typeof obj.update === 'function') {
-          obj.update(this.animationTime);
+      if (secondChanged && this.animatableObjects.length > 0) {
+        const firstObj = this.animatableObjects[0];
+        console.log('[AnimationController] First object type:', firstObj.constructor.name, 'has update:', typeof firstObj.update);
+      }
+
+      this.animatableObjects.forEach((obj, idx) => {
+        try {
+          if (obj.update && typeof obj.update === 'function') {
+            obj.update(this.animationTime);
+          } else if (secondChanged) {
+            console.warn('[AnimationController] Object', idx, 'has no update method:', obj);
+          }
+        } catch (err) {
+          if (secondChanged) {
+            console.error('[AnimationController] Error updating object', idx, ':', err.message);
+          }
         }
       });
 

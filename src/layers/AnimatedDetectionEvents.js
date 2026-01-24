@@ -105,24 +105,32 @@ export class AnimatedDetectionEvent {
 
     ring.positions = positions;
 
-    // Create or update the path
-    const attrs = new WorldWind.ShapeAttributes(null);
-    attrs.outlineColor = new WorldWind.Color(
-      this.baseColor.red,
-      this.baseColor.green,
-      this.baseColor.blue,
-      opacity
-    );
-    attrs.outlineWidth = 2.5 - (ring.index * 0.3);
-    attrs.drawInterior = false;
-    attrs.applyLighting = false;
-
     if (ring.path) {
-      // Update existing path
-      ring.path.positions = positions;
-      ring.path.attributes = attrs;
+      // Update existing path positions in place
+      ring.path.positions.length = 0;
+      positions.forEach(pos => ring.path.positions.push(pos));
+
+      // Update attributes in place
+      ring.path.attributes.outlineColor = new WorldWind.Color(
+        this.baseColor.red,
+        this.baseColor.green,
+        this.baseColor.blue,
+        opacity
+      );
+      ring.path.attributes.outlineWidth = 2.5 - (ring.index * 0.3);
     } else {
-      // Create new path
+      // Create new path with attributes
+      const attrs = new WorldWind.ShapeAttributes(null);
+      attrs.outlineColor = new WorldWind.Color(
+        this.baseColor.red,
+        this.baseColor.green,
+        this.baseColor.blue,
+        opacity
+      );
+      attrs.outlineWidth = 2.5 - (ring.index * 0.3);
+      attrs.drawInterior = false;
+      attrs.applyLighting = false;
+
       ring.path = new WorldWind.Path(positions, attrs);
       ring.path.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
       ring.path.followTerrain = false;
@@ -134,6 +142,12 @@ export class AnimatedDetectionEvent {
    * Update animation (called every frame)
    */
   update(time) {
+    // Log once to confirm update is being called
+    if (!this._logged) {
+      console.log('[AnimatedDetectionEvent] update() called for', this.label);
+      this._logged = true;
+    }
+
     // Update each ring
     this.rings.forEach(ring => {
       this.updateRingGeometry(ring, time);
