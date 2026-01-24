@@ -66,31 +66,9 @@ export class AnimatedSatellite {
    * Update animation (called every frame)
    */
   update(time) {
-    // Log every second for satellite 0
-    const second = Math.floor(time);
-    if (this.index === 0 && this._lastSecond !== second) {
-      this._lastSecond = second;
-      console.log('>>> SATELLITE 0 UPDATE - time:', time.toFixed(2));
-      // Log available methods on placemark (once)
-      if (!this._loggedMethods) {
-        this._loggedMethods = true;
-        console.log('>>> Placemark keys:', Object.keys(this.placemark));
-        console.log('>>> Placemark.position:', this.placemark.position);
-      }
-    }
-
-    if (this.placemark && this.placemark.position) {
+    if (this.placemark) {
       const newPos = this.calculatePosition(time);
-
-      // Log position for satellite 0 every second
-      if (this.index === 0 && this._lastSecond === second && !this._loggedThisSecond) {
-        this._loggedThisSecond = true;
-        console.log('>>> SATELLITE 0 POSITION - lat:', newPos.latitude.toFixed(2), 'lon:', newPos.longitude.toFixed(2));
-        setTimeout(() => { this._loggedThisSecond = false; }, 900);
-      }
-
-      // Try setting position directly as new object
-      this.placemark.position = new WorldWind.Position(newPos.latitude, newPos.longitude, newPos.altitude);
+      this.placemark.position = newPos;
     }
   }
 

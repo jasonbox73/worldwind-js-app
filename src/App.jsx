@@ -9,13 +9,13 @@ import ControlPanel from './components/ControlPanel';
 function App() {
   // State for all layer toggles
   const [layerStates, setLayerStates] = useState({
-    terminal: false,
-    midcourse: false,
-    spaceBased: false,
-    sensors: false,
+    terminal: true,
+    midcourse: true,
+    spaceBased: true,
+    sensors: true,
     animatedSatellites: false,
     animatedEvents: false,
-    overlay: false
+    overlay: true
   });
 
   // Handle layer toggle from control panel

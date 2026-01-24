@@ -106,9 +106,8 @@ export class AnimatedDetectionEvent {
     ring.positions = positions;
 
     if (ring.path) {
-      // Update existing path positions in place
-      ring.path.positions.length = 0;
-      positions.forEach(pos => ring.path.positions.push(pos));
+      // Assign new positions array to trigger Path's setter which calls reset()
+      ring.path.positions = positions;
 
       // Update attributes in place
       ring.path.attributes.outlineColor = new WorldWind.Color(
@@ -142,12 +141,6 @@ export class AnimatedDetectionEvent {
    * Update animation (called every frame)
    */
   update(time) {
-    // Log once to confirm update is being called
-    if (!this._logged) {
-      console.log('[AnimatedDetectionEvent] update() called for', this.label);
-      this._logged = true;
-    }
-
     // Update each ring
     this.rings.forEach(ring => {
       this.updateRingGeometry(ring, time);
