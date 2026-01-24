@@ -13,6 +13,8 @@ function App() {
     midcourse: false,
     spaceBased: false,
     sensors: false,
+    animatedSatellites: false,
+    animatedEvents: false,
     overlay: false
   });
 

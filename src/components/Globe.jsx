@@ -3,6 +3,9 @@ import WorldWind from 'worldwindjs';
 import { createOverlayLayer } from '../layers/createOverlayLayer';
 import { createDefenseDomes } from '../layers/createDefenseDomes';
 import { createSensorLayer } from '../layers/createSensorLayer';
+import { AnimationController } from '../utils/AnimationController';
+import { createAnimatedDetectionEvents } from '../layers/AnimatedDetectionEvents';
+import { createAnimatedSatellites } from '../layers/AnimatedSatellites';
 
 /**
  * Globe component that renders an interactive 3D Earth using NASA Web WorldWind.
@@ -17,6 +20,10 @@ function Globe({ layerStates = {} }) {
   const wwRef = useRef(null);
   // Refs to store all layers for toggling
   const layersRef = useRef({});
+  // Ref to store the animation controller
+  const animationControllerRef = useRef(null);
+  // Ref to store animated detection events
+  const animatedEventsRef = useRef([]);
 
   // Initialize WorldWind on mount
   useEffect(() => {
@@ -60,11 +67,47 @@ function Globe({ layerStates = {} }) {
     wwd.addLayer(defenseDomes.midcourse);
     wwd.addLayer(defenseDomes.spaceBased);
 
-    // Create sensor layer (initially hidden)
+    // Create animation controller
+    const animationController = new AnimationController(wwd);
+    animationControllerRef.current = animationController;
+
+    // Create sensor layer with static elements (initially hidden)
     const sensorLayer = createSensorLayer();
     sensorLayer.enabled = false;
     layersRef.current.sensors = sensorLayer;
     wwd.addLayer(sensorLayer);
+
+    // Create animated detection events layer
+    const animatedEventsLayer = new WorldWind.RenderableLayer('Animated Detection Events');
+    const animatedEvents = createAnimatedDetectionEvents(animationController);
+    animatedEventsRef.current = animatedEvents;
+
+    // Add all animated event renderables to the layer
+    animatedEvents.forEach(event => {
+      event.getRenderables().forEach(renderable => {
+        animatedEventsLayer.addRenderable(renderable);
+      });
+    });
+
+    animatedEventsLayer.enabled = false;
+    layersRef.current.animatedEvents = animatedEventsLayer;
+    wwd.addLayer(animatedEventsLayer);
+
+    // Create animated satellites layer
+    const animatedSatellitesLayer = new WorldWind.RenderableLayer('Animated Satellites');
+    const animatedSatellites = createAnimatedSatellites(animationController);
+
+    // Add all satellite renderables to the layer
+    animatedSatellites.forEach(satellite => {
+      animatedSatellitesLayer.addRenderable(satellite.getRenderable());
+    });
+
+    animatedSatellitesLayer.enabled = false;
+    layersRef.current.animatedSatellites = animatedSatellitesLayer;
+    wwd.addLayer(animatedSatellitesLayer);
+
+    // Start animation loop
+    animationController.start();
 
     // Create overlay layer (grid/boundaries, initially hidden)
     const overlayLayer = createOverlayLayer();
@@ -87,8 +130,14 @@ function Globe({ layerStates = {} }) {
     wwd.redraw();
 
     return () => {
+      // Stop animation loop on cleanup
+      if (animationControllerRef.current) {
+        animationControllerRef.current.stop();
+      }
       wwRef.current = null;
       layersRef.current = {};
+      animationControllerRef.current = null;
+      animatedEventsRef.current = [];
     };
   }, []);
 

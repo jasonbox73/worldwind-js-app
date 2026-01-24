@@ -42,6 +42,20 @@ function ControlPanel({ layers, onLayerToggle }) {
       icon: '📡'
     },
     {
+      id: 'animatedSatellites',
+      name: 'Moving Satellites',
+      description: 'Animated orbital satellite motion',
+      color: '#66DDFF',
+      icon: '🛸'
+    },
+    {
+      id: 'animatedEvents',
+      name: 'Active Tracking',
+      description: 'Animated threat detection events',
+      color: '#FF5050',
+      icon: '🎯'
+    },
+    {
       id: 'overlay',
       name: 'Grid & Boundaries',
       description: 'Coordinate grid and US outline',
