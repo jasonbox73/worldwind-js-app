@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import WorldWind from 'worldwindjs';
 import { createOverlayLayer } from '../layers/createOverlayLayer';
 import { createDefenseDomes } from '../layers/createDefenseDomes';
+import { createUSBorderLayer } from '../layers/createUSBorderLayer';
 import { createSensorLayer } from '../layers/createSensorLayer';
 import { AnimationController } from '../utils/AnimationController';
 import { createAnimatedDetectionEvents } from '../layers/AnimatedDetectionEvents';
@@ -108,6 +109,12 @@ function Globe({ layerStates = {} }) {
 
     // Start animation loop
     animationController.start();
+
+    // Create US border layer (initially enabled for visibility)
+    const usBorderLayer = createUSBorderLayer();
+    usBorderLayer.enabled = true;
+    layersRef.current.usBorder = usBorderLayer;
+    wwd.addLayer(usBorderLayer);
 
     // Create overlay layer (grid/boundaries, initially hidden)
     const overlayLayer = createOverlayLayer();

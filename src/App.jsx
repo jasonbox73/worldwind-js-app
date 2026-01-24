@@ -15,6 +15,7 @@ function App() {
     sensors: true,
     animatedSatellites: false,
     animatedEvents: false,
+    usBorder: true,
     overlay: true
   });
 

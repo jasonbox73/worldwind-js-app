@@ -56,9 +56,16 @@ function ControlPanel({ layers, onLayerToggle }) {
       icon: '🎯'
     },
     {
+      id: 'usBorder',
+      name: 'US Border',
+      description: 'Continental US outline',
+      color: '#FFB833',
+      icon: '🇺🇸'
+    },
+    {
       id: 'overlay',
       name: 'Grid & Boundaries',
-      description: 'Coordinate grid and US outline',
+      description: 'Coordinate grid and flight paths',
       color: '#88BBFF',
       icon: '🗺️'
     }
@@ -149,6 +156,13 @@ function ControlPanel({ layers, onLayerToggle }) {
                   style={{ backgroundColor: '#80FFD0', opacity: 0.5 }}
                 ></div>
                 <span className="legend-label">Sensor Handoff</span>
+              </div>
+              <div className="legend-item">
+                <div
+                  className="legend-color"
+                  style={{ backgroundColor: '#FFB833' }}
+                ></div>
+                <span className="legend-label">US Border</span>
               </div>
             </div>
           </div>
