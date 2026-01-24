@@ -17,7 +17,8 @@ The Golden Dome Military Planner Application provides an interactive 3D visualiz
   - **Space-Based Detection** (LEO/MEO, 1000-2000km) - Cyan colored
 - **Sensor Network** - Orbital paths with satellite nodes and detection coverage indicators
 - **Professional Control Panel** - Military/technical aesthetic with layer toggles and legend
-- **Grid & Boundaries** - Coordinate grid overlay and US continental boundary outline
+- **US Border** - Golden outline of continental US with multi-layer halo effect
+- **Grid & Overlays** - Coordinate grid overlay and flight path visualization
 
 ## Technology Stack
 
@@ -54,12 +55,15 @@ worldwind-js-app/
     ├── index.css             # Global styles
     ├── components/
     │   ├── Globe.jsx         # WorldWind integration component
-    │   ├── ControlPanel.jsx  # Layer control interface
+    │   ├── ControlPanel.jsx  # Layer control interface (8 toggles)
     │   └── ControlPanel.css  # Control panel styling
-    └── layers/
-        ├── createDefenseDomes.js   # Hemispherical defense layers
-        ├── createSensorLayer.js    # Orbital sensors and paths
-        └── createOverlayLayer.js   # Grid and boundary overlays
+    ├── layers/
+    │   ├── createDefenseDomes.js   # Hemispherical defense layers
+    │   ├── createSensorLayer.js    # Orbital sensors and paths
+    │   ├── createUSBorderLayer.js  # US border with halo effect
+    │   └── createOverlayLayer.js   # Grid and flight path overlays
+    └── utils/
+        └── AnimationController.js  # 60 FPS animation loop manager
 ```
 
 ## Usage
@@ -72,7 +76,10 @@ The control panel on the right side provides toggles for:
 2. **Midcourse Defense** - Toggle the middle exo-atmospheric layer
 3. **Space-Based Detection** - Toggle the outermost sensor layer
 4. **Sensor Network** - Toggle orbital paths and satellite nodes
-5. **Grid & Boundaries** - Toggle coordinate grid and US boundary
+5. **Moving Satellites** - Toggle animated satellite motion
+6. **Active Tracking** - Toggle animated threat detection events
+7. **US Border** - Toggle golden US outline with halo effect
+8. **Grid & Boundaries** - Toggle coordinate grid and flight paths
 
 ### Navigation
 
@@ -183,6 +190,6 @@ For questions or issues:
 
 ---
 
-**Version:** 2.0.0
+**Version:** 2.2.0
 **Status:** Production Ready
-**Last Updated:** January 2026
+**Last Updated:** January 24, 2026

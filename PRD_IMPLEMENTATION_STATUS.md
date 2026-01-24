@@ -1,7 +1,7 @@
 # Golden Dome PRD Implementation Status
 
-**Last Updated:** January 23, 2026
-**Version:** 2.1.0
+**Last Updated:** January 24, 2026
+**Version:** 2.2.0
 **Status:** Phase 1 Complete - Ready for Phase 2
 
 ---
@@ -113,12 +113,13 @@ All static visualization requirements have been implemented and are production-r
 - Professional military/technical aesthetic
 - Dark blue/black space background
 - Collapsible control panel
-- Visual legend with 5 indicators:
+- Visual legend with 6 indicators:
   - Terminal Defense (gold)
   - Midcourse Defense (blue)
   - Space-Based Detection (cyan)
   - Active Tracking (red)
   - Sensor Handoff (cyan-green)
+  - US Border (gold)
 - Status indicator ("System Nominal")
 - Individual layer toggles with icons
 - Smooth animations and transitions
@@ -209,10 +210,11 @@ All static visualization requirements have been implemented and are production-r
 4. ✅ **Detection Events** - 3 active threat tracking indicators
 5. ✅ **Handoff Links** - Inter-satellite communication visualization
 6. ✅ **Professional Control Panel** - Military-themed UI
-7. ✅ **Visual Legend** - 5 color-coded indicators
-8. ✅ **Layer Toggles** - Individual control for all layers
-9. ✅ **Grid Overlay** - Coordinate reference system
-10. ✅ **Performance** - 60 FPS on modern hardware
+7. ✅ **Visual Legend** - 6 color-coded indicators
+8. ✅ **Layer Toggles** - Individual control for all 8 layers
+9. ✅ **US Border Outline** - Golden halo effect around continental US
+10. ✅ **Grid Overlay** - Coordinate reference system
+11. ✅ **Performance** - 60 FPS on modern hardware
 
 ### File Structure
 ```
@@ -220,12 +222,15 @@ worldwind-js-app/
 ├── src/
 │   ├── components/
 │   │   ├── Globe.jsx           ✅ Multi-layer integration
-│   │   ├── ControlPanel.jsx    ✅ UI controls
+│   │   ├── ControlPanel.jsx    ✅ UI controls (8 toggles)
 │   │   └── ControlPanel.css    ✅ Military theme
 │   ├── layers/
 │   │   ├── createDefenseDomes.js   ✅ 3 dome layers
 │   │   ├── createSensorLayer.js    ✅ Sensors + events + handoffs
-│   │   └── createOverlayLayer.js   ✅ Grid + boundaries
+│   │   ├── createUSBorderLayer.js  ✅ US border with halo effect
+│   │   └── createOverlayLayer.js   ✅ Grid + flight paths
+│   ├── utils/
+│   │   └── AnimationController.js  ✅ Animation loop manager
 │   ├── App.jsx                 ✅ State management
 │   ├── index.css               ✅ Global styling
 │   └── main.jsx                ✅ Entry point

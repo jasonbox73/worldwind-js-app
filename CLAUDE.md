@@ -34,16 +34,18 @@ App.jsx (root state management)
 │   ├── createSensorLayer.js (orbital paths + static satellites + handoff links - STATIC)
 │   ├── AnimatedSatellites.js (moving satellites along orbits - ANIMATED)
 │   ├── AnimatedDetectionEvents.js (pulsing detection markers - ANIMATED)
-│   └── createOverlayLayer.js (grid + CONUS boundary - STATIC)
+│   ├── createUSBorderLayer.js (US border outline with halo effect - STATIC)
+│   └── createOverlayLayer.js (grid + flight paths - STATIC)
 └── ControlPanel.jsx (layer toggles + legend + status)
 ```
 
 ### State Flow
 
-1. **App.jsx** holds central state for all layer visibility toggles (`layerStates`) with 7 toggleable items:
+1. **App.jsx** holds central state for all layer visibility toggles (`layerStates`) with 8 toggleable items:
    - `terminal`, `midcourse`, `spaceBased` (defense domes)
    - `sensors` (static sensor network)
    - `animatedSatellites`, `animatedEvents` (animated layers)
+   - `usBorder` (US border outline with halo effect)
    - `overlay` (grid and boundaries)
 
 2. **Globe.jsx** receives `layerStates` as props and manages:
@@ -75,6 +77,16 @@ App.jsx (root state management)
 - **Detection events**: 3 static markers (Track-01, Track-02, Track-03) at specific CONUS locations
 - **Handoff links**: Dashed lines connecting sensors from different orbits (< 60° angular distance)
 - Uses dual-layer glow effects for sensor nodes (outer glow + bright center)
+
+**US Border Layer** (`createUSBorderLayer.js`):
+- Creates golden outline of continental US with multi-layer halo effect
+- **Halo effect**: 13 stacked path layers at different altitudes and widths
+  - 6 outer halo layers (wide 40-12px, very transparent 3-15% alpha)
+  - 4 middle glow layers (medium 10-5px, medium opacity 20-50% alpha)
+  - 3 core layers (narrow 4-2px, bright 70-100% alpha)
+- **Interior fill**: Subtle SurfacePolygon with 8% alpha for warm glow
+- ~180 coordinate points for detailed border outline
+- Base altitude: 10,000m with offsets up to 5,000m for halo depth
 
 **Animation System** (`AnimationController.js`, `AnimatedSatellites.js`, `AnimatedDetectionEvents.js`):
 - **AnimationController**: Manages 60 FPS rendering loop using `requestAnimationFrame`
@@ -116,7 +128,8 @@ WorldWind renders layers in order added. Current stack (bottom to top):
 7. **Sensor Network** (toggleable) - static orbital paths, sensors, detection events, handoff links
 8. **Animated Detection Events** (toggleable) - pulsing threat markers
 9. **Animated Satellites** (toggleable) - moving satellite placemarks
-10. **Overlay** (toggleable) - coordinate grid + CONUS boundary outline
+10. **US Border** (toggleable) - golden outline of continental US with halo effect
+11. **Overlay** (toggleable) - coordinate grid + flight paths
 
 **Note**: Both static sensors (layer 7) and animated satellites (layer 9) can be enabled simultaneously - they represent different visualization modes.
 
@@ -148,14 +161,15 @@ WorldWind renders layers in order added. Current stack (bottom to top):
 src/
 ├── components/
 │   ├── Globe.jsx                     # WorldWind integration, layer orchestration
-│   ├── ControlPanel.jsx              # UI controls with 7 layer toggles
+│   ├── ControlPanel.jsx              # UI controls with 8 layer toggles
 │   └── ControlPanel.css              # Military-themed control panel styling
 ├── layers/
 │   ├── createDefenseDomes.js         # 3 static hemispherical domes
 │   ├── createSensorLayer.js          # Static sensors, orbits, detection events, handoffs
 │   ├── AnimatedSatellites.js         # Animated satellites moving along orbits
 │   ├── AnimatedDetectionEvents.js    # Pulsing detection markers
-│   └── createOverlayLayer.js         # Coordinate grid + CONUS boundary
+│   ├── createUSBorderLayer.js        # US border outline with multi-layer halo effect
+│   └── createOverlayLayer.js         # Coordinate grid + flight paths
 ├── utils/
 │   └── AnimationController.js        # 60 FPS animation loop manager
 ├── App.jsx                           # Root component with layer state management
@@ -185,6 +199,11 @@ Base: rgba(255, 77, 77, 0.8) - #FF5050 red/orange pulsing rings
 
 // Sensor Handoff Links (static)
 Color: rgba(128, 255, 208, 0.5) - #80FFD0 cyan-green dashed lines
+
+// US Border (halo effect)
+Core: rgba(255, 199, 64, 1.0) - #FFC740 bright gold center line
+Halo: rgba(255, 199, 64, 0.03-0.15) - graduated alpha for outer glow
+Fill: rgba(255, 204, 77, 0.08) - subtle interior fill
 
 // Sensor Nodes
 Polar Orbit 1 (800km): rgba(102, 204, 255, 0.9)
