@@ -13,8 +13,8 @@ export class AnimatedSatellite {
     this.totalSatellites = totalSatellites;
     this.modelData = modelData; // Add model data
 
-    // Orbital parameters - use faster period for visualization (90 seconds instead of 90 minutes)
-    this.orbitPeriod = 90; // 90 seconds for visible animation (real LEO would be 90 * 60)
+    // Orbital parameters - use faster period for visualization (180 seconds = 3 minutes)
+    this.orbitPeriod = 180; // 3 minutes for comfortable tracking (real LEO would be 90 * 60)
     this.phaseOffset = (index / totalSatellites) * Math.PI * 2; // Evenly spaced
     this.orbitOffset = orbit.phaseOffset || 0;
 

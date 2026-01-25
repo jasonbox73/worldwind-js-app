@@ -26,9 +26,10 @@ export class SatelliteShape {
    * Render the 3D satellite model
    */
   render(dc) {
-    if (!this.enabled) {
-      return;
-    }
+    try {
+      if (!this.enabled) {
+        return;
+      }
 
     // Initialize WebGL buffers on first render
     if (!this.initialized) {
@@ -61,8 +62,12 @@ export class SatelliteShape {
     mvMatrix.multiplyByRotation(1, 0, 0, 90); // Align model upright
     mvMatrix.multiplyByRotation(0, 0, 1, this.heading);
 
+    // Multiply by the projection matrix
+    const mvpMatrix = WorldWind.Matrix.fromIdentity();
+    mvpMatrix.setToMultiply(dc.projection, mvMatrix);
+
     // Apply to GL context
-    program.loadModelviewMatrix(gl, mvMatrix);
+    program.loadModelviewProjection(gl, mvpMatrix);
 
     // Bind vertex buffer
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
@@ -96,6 +101,10 @@ export class SatelliteShape {
 
     // Draw the model
     gl.drawArrays(gl.TRIANGLES, 0, this.modelData.vertexCount);
+
+    } catch (error) {
+      console.error('Error rendering satellite:', error);
+    }
   }
 
   /**
