@@ -87,16 +87,10 @@ export class SatelliteShape {
       gl.enableVertexAttribArray(program.normalVectorLocation);
     }
 
-    // Set color
-    const colorUniform = gl.getUniformLocation(program.programId, 'uColor');
-    if (colorUniform) {
-      gl.uniform4f(
-        colorUniform,
-        this.color.red,
-        this.color.green,
-        this.color.blue,
-        this.color.alpha
-      );
+    // Set color using WorldWind's built-in color uniform
+    if (program.colorLocation !== undefined && program.colorLocation !== null) {
+      // Use loadUniformColor which handles premultiplied alpha correctly
+      program.loadUniformColor(gl, this.color, program.colorLocation);
     }
 
     // Draw the model
