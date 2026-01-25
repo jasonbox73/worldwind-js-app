@@ -94,18 +94,24 @@ function Globe({ layerStates = {} }) {
     layersRef.current.animatedEvents = animatedEventsLayer;
     wwd.addLayer(animatedEventsLayer);
 
-    // Create animated satellites layer
+    // Create animated satellites layer (async due to model loading)
     const animatedSatellitesLayer = new WorldWind.RenderableLayer('Animated Satellites');
-    const animatedSatellites = createAnimatedSatellites(animationController);
-
-    // Add all satellite renderables to the layer
-    animatedSatellites.forEach(satellite => {
-      animatedSatellitesLayer.addRenderable(satellite.getRenderable());
-    });
-
-    animatedSatellitesLayer.enabled = false;
     layersRef.current.animatedSatellites = animatedSatellitesLayer;
+    animatedSatellitesLayer.enabled = false;
     wwd.addLayer(animatedSatellitesLayer);
+
+    // Load satellites asynchronously
+    createAnimatedSatellites(animationController).then(animatedSatellites => {
+      // Add all satellite renderables to the layer
+      animatedSatellites.forEach(satellite => {
+        animatedSatellitesLayer.addRenderable(satellite.getRenderable());
+      });
+
+      console.log('3D satellites loaded:', animatedSatellites.length);
+      wwd.redraw();
+    }).catch(error => {
+      console.error('Failed to load satellite models:', error);
+    });
 
     // Start animation loop
     animationController.start();
