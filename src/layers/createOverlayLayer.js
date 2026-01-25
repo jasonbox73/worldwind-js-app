@@ -4,16 +4,12 @@ import WorldWind from 'worldwindjs';
  * Creates a custom overlay layer with glowing effects:
  * 1. Dense coordinate grid with glow
  * 2. US boundary outline with glow
- * 3. Orbital trajectory paths with glow
- * 4. Glowing point markers
  */
 export function createOverlayLayer() {
   const overlayLayer = new WorldWind.RenderableLayer('Overlay');
 
   addGraticule(overlayLayer);
   addUSBoundary(overlayLayer);
-  addOrbitalPaths(overlayLayer);
-  addPointMarkers(overlayLayer);
 
   return overlayLayer;
 }
@@ -122,102 +118,6 @@ function addUSBoundary(layer) {
   );
 
   addGlowingPath(layer, positions, boundaryColor, 1.5, 4);
-}
-
-/**
- * 3. ORBITAL PATHS - Curved trajectories with glow
- */
-function addOrbitalPaths(layer) {
-  const orbitColor = new WorldWind.Color(0.9, 0.15, 0.2, 0.85); // Red
-
-  // Path 1 - High arc from Pacific to North America
-  const orbit1 = generateOrbitalPath(10, -175, 60, -90, 1200000, 80);
-  addGlowingPath(layer, orbit1, orbitColor, 1.5, 4);
-
-  // Path 2 - Medium arc
-  const orbit2 = generateOrbitalPath(0, -165, 50, -100, 900000, 70);
-  addGlowingPath(layer, orbit2, orbitColor, 1.5, 4);
-
-  // Path 3 - Lower crossing arc
-  const orbit3 = generateOrbitalPath(20, -155, 35, -70, 600000, 60);
-  addGlowingPath(layer, orbit3, orbitColor, 1.5, 4);
-}
-
-/**
- * Generate smooth orbital arc positions
- */
-function generateOrbitalPath(startLat, startLon, endLat, endLon, maxAlt, segments) {
-  const positions = [];
-
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-
-    // Use smooth interpolation for more natural curve
-    const smoothT = t * t * (3 - 2 * t); // Smoothstep
-
-    const lat = startLat + (endLat - startLat) * smoothT;
-    const lon = startLon + (endLon - startLon) * t;
-
-    // Parabolic altitude profile
-    const alt = maxAlt * Math.sin(Math.PI * t);
-
-    positions.push(new WorldWind.Position(lat, lon, alt));
-  }
-
-  return positions;
-}
-
-/**
- * 4. POINT MARKERS - Bright glowing markers along paths
- */
-function addPointMarkers(layer) {
-  const markerPositions = [
-    // Along orbital path 1
-    { lat: 15, lon: -170, alt: 300000 },
-    { lat: 25, lon: -160, alt: 700000 },
-    { lat: 40, lon: -140, alt: 1100000 },
-    { lat: 55, lon: -110, alt: 900000 },
-    // Along orbital path 2
-    { lat: 10, lon: -160, alt: 400000 },
-    { lat: 30, lon: -140, alt: 800000 },
-    { lat: 45, lon: -115, alt: 700000 },
-    // Along orbital path 3
-    { lat: 22, lon: -150, alt: 200000 },
-    { lat: 28, lon: -120, alt: 500000 },
-    { lat: 32, lon: -90, alt: 350000 },
-  ];
-
-  // Create large glow marker
-  const largeGlow = new WorldWind.PlacemarkAttributes(null);
-  largeGlow.imageSource = createGlowCanvas(128, 'rgba(255, 180, 80, 1)', 'rgba(255, 100, 30, 0)');
-  largeGlow.imageScale = 0.4;
-  largeGlow.imageOffset = new WorldWind.Offset(
-    WorldWind.OFFSET_FRACTION, 0.5,
-    WorldWind.OFFSET_FRACTION, 0.5
-  );
-
-  // Create bright center marker
-  const brightCenter = new WorldWind.PlacemarkAttributes(null);
-  brightCenter.imageSource = createGlowCanvas(64, 'rgba(255, 255, 220, 1)', 'rgba(255, 200, 100, 0)');
-  brightCenter.imageScale = 0.15;
-  brightCenter.imageOffset = new WorldWind.Offset(
-    WorldWind.OFFSET_FRACTION, 0.5,
-    WorldWind.OFFSET_FRACTION, 0.5
-  );
-
-  markerPositions.forEach(({ lat, lon, alt }) => {
-    const position = new WorldWind.Position(lat, lon, alt);
-
-    // Outer glow
-    const glowMark = new WorldWind.Placemark(position, false, largeGlow);
-    glowMark.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
-    layer.addRenderable(glowMark);
-
-    // Bright center
-    const centerMark = new WorldWind.Placemark(position, false, brightCenter);
-    centerMark.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
-    layer.addRenderable(centerMark);
-  });
 }
 
 /**
