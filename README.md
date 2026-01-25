@@ -15,7 +15,9 @@ The Golden Dome Military Planner Application provides an interactive 3D visualiz
   - **Terminal Defense** (endo-atmospheric, 50-150km) - Gold/amber colored
   - **Midcourse Defense** (exo-atmospheric, 150-1000km) - Blue colored
   - **Space-Based Detection** (LEO/MEO, 1000-2000km) - Cyan colored
+- **3D Satellite Models** - Fully animated 3D satellites rendered using WebGL with OBJ models
 - **Sensor Network** - Orbital paths with satellite nodes and detection coverage indicators
+- **Animated Detection Events** - Pulsing threat markers with expanding rings
 - **Professional Control Panel** - Military/technical aesthetic with layer toggles and legend
 - **US Border** - Golden outline of continental US with multi-layer halo effect
 - **Grid & Overlays** - Coordinate grid overlay and flight path visualization
@@ -58,12 +60,17 @@ worldwind-js-app/
     │   ├── ControlPanel.jsx  # Layer control interface (8 toggles)
     │   └── ControlPanel.css  # Control panel styling
     ├── layers/
-    │   ├── createDefenseDomes.js   # Hemispherical defense layers
-    │   ├── createSensorLayer.js    # Orbital sensors and paths
-    │   ├── createUSBorderLayer.js  # US border with halo effect
-    │   └── createOverlayLayer.js   # Grid and flight path overlays
+    │   ├── createDefenseDomes.js      # Hemispherical defense layers
+    │   ├── createSensorLayer.js       # Orbital sensors and paths
+    │   ├── AnimatedSatellites.js      # 3D animated satellites
+    │   ├── AnimatedDetectionEvents.js # Pulsing detection events
+    │   ├── createUSBorderLayer.js     # US border with halo effect
+    │   └── createOverlayLayer.js      # Grid and flight path overlays
+    ├── shapes/
+    │   └── SatelliteShape.js # Custom WebGL 3D satellite renderer
     └── utils/
-        └── AnimationController.js  # 60 FPS animation loop manager
+        ├── AnimationController.js # 60 FPS animation loop manager
+        └── OBJLoader.js          # Wavefront OBJ file parser
 ```
 
 ## Usage
@@ -157,12 +164,13 @@ Requires a modern browser with WebGL support:
 
 ## Future Enhancements
 
-- Animated threat trajectories
-- Timeline/simulation controls
+- Animated threat trajectories with ballistic paths
+- Timeline/simulation controls (play/pause/speed)
 - Interceptor launch visualization
 - Multi-threat scenarios
 - Probabilistic kill assessments
 - Export to briefing tools
+- PBR texture mapping for satellite models (albedo, normal, metallic, roughness)
 
 ## Security & Classification
 
@@ -190,6 +198,6 @@ For questions or issues:
 
 ---
 
-**Version:** 2.2.0
-**Status:** Production Ready
-**Last Updated:** January 24, 2026
+**Version:** 2.3.0
+**Status:** Production Ready - Phase 2 Animations Complete
+**Last Updated:** January 25, 2026

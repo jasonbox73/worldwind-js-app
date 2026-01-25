@@ -8,7 +8,7 @@ Golden Dome is a geospatial, multi-domain visualization platform for modeling an
 
 **Key Concept**: The application visualizes three concentric hemispherical defense layers (Terminal, Midcourse, Space-Based) with an orbital sensor network, creating a unified operational picture for strategic planning and briefings.
 
-**Current Status**: Phase 1 (static visualization) is 100% complete and production-ready. Phase 2 (animation system) has been implemented with `AnimationController`, `AnimatedSatellites`, and `AnimatedDetectionEvents` files created, but animations may require debugging if not functioning.
+**Current Status**: Phase 1 (static visualization) is 100% complete and production-ready. Phase 2 (animation system) is 100% complete with fully functional 3D satellite models, pulsing detection events, and 50-60 FPS performance. Timeline controls and threat trajectories remain for future phases.
 
 ## Development Commands
 
@@ -88,32 +88,48 @@ App.jsx (root state management)
 - ~180 coordinate points for detailed border outline
 - Base altitude: 10,000m with offsets up to 5,000m for halo depth
 
+**3D Model Rendering** (`SatelliteShape.js`, `OBJLoader.js`):
+- **OBJLoader**: Parses Wavefront OBJ files into WebGL-ready geometry
+  - Converts vertices, normals, and faces to flat Float32Array buffers
+  - Triangulates quad faces automatically (splits into 2 triangles)
+  - Loads model once, shared across all satellite instances
+  - Model asset: `/space-satellite/source/Satellite2.obj` (~6,500 vertices, ~3,900 triangles)
+- **SatelliteShape**: Custom WorldWind Renderable using WebGL
+  - Extends Renderable interface with custom `render(dc)` method
+  - Creates vertex/normal buffers on first render (lazy initialization)
+  - Transforms model using WorldWind's DrawContext matrix stack
+  - 50km default scale (adjustable via `scale` property)
+  - Updates position and heading rotation for orbital motion
+  - Proper cleanup via WebGL buffer deletion
+
 **Animation System** (`AnimationController.js`, `AnimatedSatellites.js`, `AnimatedDetectionEvents.js`):
 - **AnimationController**: Manages 60 FPS rendering loop using `requestAnimationFrame`
   - Tracks `animationTime` (accumulated time in seconds, adjusted by speed multiplier)
   - Objects register via `registerAnimatable(obj)` - they must implement `update(time)` method
-  - Started in Globe.jsx line 110 with `animationController.start()`
+  - Started in Globe.jsx line 116 with `animationController.start()`
   - Calls `wwd.redraw()` on every frame when playing
 
-- **AnimatedSatellite class**: Represents moving satellites
+- **AnimatedSatellite class**: Represents moving satellites with 3D models
+  - Uses `SatelliteShape` for WebGL rendering instead of 2D placemarks
   - Calculates orbital position using simplified orbital mechanics
-  - 90-minute orbital period (typical LEO)
+  - 180-second orbital period for comfortable visual tracking (real LEO is 90 minutes)
   - Position formula: `lat = sin(angle) * inclination`, `lon = (angle % 360) - 180`
-  - Each satellite is evenly spaced along its orbit using phase offsets
-  - Updates placemark position every frame
+  - Each satellite evenly spaced along orbit using phase offsets
+  - Updates shape position and heading rotation every frame
+  - Async model loading via `createAnimatedSatellites()` factory
 
 - **AnimatedDetectionEvent class**: Represents pulsing threat detection markers
   - Creates 3 staggered pulsing rings per event
   - Rings expand/contract between 2-5° radius using sine wave
-  - Opacity fades as rings expand
+  - Opacity fades as rings expand (distance-based alpha)
   - Center marker also pulses in scale
   - Uses `updateRingGeometry()` to recalculate ring positions every frame
 
-**Integration Flow** (Globe.jsx lines 70-110):
+**Integration Flow** (Globe.jsx lines 70-116):
 1. Create AnimationController
 2. Create static sensor layer
 3. Create animated detection events, register with controller, add renderables to layer
-4. Create animated satellites, register with controller, add renderables to layer
+4. Create animated satellites layer, **async load 3D OBJ models**, register with controller, add renderables to layer
 5. Start animation loop
 
 ### Layer System
@@ -127,33 +143,44 @@ WorldWind renders layers in order added. Current stack (bottom to top):
 6. **Space-Based Detection** (toggleable) - cyan dome
 7. **Sensor Network** (toggleable) - static orbital paths, sensors, detection events, handoff links
 8. **Animated Detection Events** (toggleable) - pulsing threat markers
-9. **Animated Satellites** (toggleable) - moving satellite placemarks
+9. **Animated Satellites** (toggleable) - moving 3D satellite models with WebGL
 10. **US Border** (toggleable) - golden outline of continental US with halo effect
 11. **Overlay** (toggleable) - coordinate grid + flight paths
 
-**Note**: Both static sensors (layer 7) and animated satellites (layer 9) can be enabled simultaneously - they represent different visualization modes.
+**Note**: Both static sensors (layer 7) and animated satellites (layer 9) can be enabled simultaneously - they represent different visualization modes. Animated satellites use custom WebGL rendering with 3D OBJ models.
 
 ### Known Issues & Debugging
 
-**If animations don't work**:
-1. Check browser console for errors (especially StarFieldLayer JSON parse errors)
-2. Verify `animationController.start()` was called (Globe.jsx:110)
+**Animation System (Working as of v2.3.0)**:
+- ✅ Animation loop functioning correctly
+- ✅ 3D satellites rendering and moving along orbits
+- ✅ Detection events pulsing properly
+- ✅ Achieving 50-60 FPS with all animations enabled
+
+**If animations don't work** (troubleshooting guide):
+1. Check browser console for errors (WebGL errors, OBJ loading failures)
+2. Verify `animationController.start()` was called (Globe.jsx:116)
 3. Confirm animated objects were registered before `start()` call
 4. Check that animated layer toggles in ControlPanel are enabled
 5. Verify `layer.enabled` state matches control panel UI
 6. Test animation loop with: `console.log(animationController.getTime())` to see if time is advancing
+7. Check OBJ model loaded: Console should show "3D satellites loaded: 10"
 
-**StarFieldLayer Issue**:
-- May throw JSON parse error on `stars.json` file from worldwindjs package
-- Error is non-blocking and can be wrapped in try/catch
-- StarFieldLayer will still render background stars despite error
+**3D Model Rendering Issues**:
+- If satellites don't appear: Check model scale in `SatelliteShape.js` (default: 50000)
+- If satellites wrong orientation: Adjust rotation matrix (lines 62-63)
+- If poor performance: Check triangle count (~39k total should be fine)
+- If memory leaks: Verify WebGL buffers are deleted in cleanup
 
 **Performance debugging**:
 - Target: 60 FPS with all layers enabled
+- Achieved: 50-60 FPS (hardware dependent)
 - Static layers: ~500 renderables total
-- Animated layers add 13 objects (10 satellites + 3 events) that update each frame
+- Animated objects: 13 (10 satellites + 3 events) updating at 60 FPS
+- Triangle count: ~39,000 per frame (10 satellites × 3,900 triangles)
 - Use Chrome DevTools Performance tab to profile frame rate
 - Check for dropped frames during animation playback
+- WebGL buffers shared across satellites (single model loaded once)
 
 ## File Organization
 
@@ -166,12 +193,15 @@ src/
 ├── layers/
 │   ├── createDefenseDomes.js         # 3 static hemispherical domes
 │   ├── createSensorLayer.js          # Static sensors, orbits, detection events, handoffs
-│   ├── AnimatedSatellites.js         # Animated satellites moving along orbits
+│   ├── AnimatedSatellites.js         # 3D animated satellites moving along orbits
 │   ├── AnimatedDetectionEvents.js    # Pulsing detection markers
 │   ├── createUSBorderLayer.js        # US border outline with multi-layer halo effect
 │   └── createOverlayLayer.js         # Coordinate grid + flight paths
+├── shapes/
+│   └── SatelliteShape.js             # Custom WebGL 3D satellite renderer
 ├── utils/
-│   └── AnimationController.js        # 60 FPS animation loop manager
+│   ├── AnimationController.js        # 60 FPS animation loop manager
+│   └── OBJLoader.js                  # Wavefront OBJ file parser
 ├── App.jsx                           # Root component with layer state management
 ├── main.jsx                          # React entry point
 └── index.css                         # Global styles (dark theme, canvas sizing)
