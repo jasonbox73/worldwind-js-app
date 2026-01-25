@@ -1,14 +1,17 @@
 import WorldWind from 'worldwindjs';
+import OBJLoader from '../utils/OBJLoader';
+import SatelliteShape from '../shapes/SatelliteShape';
 
 /**
  * Animated Satellite
- * Represents a satellite moving along an orbital path
+ * Represents a satellite moving along an orbital path using 3D models
  */
 export class AnimatedSatellite {
-  constructor(orbit, index, totalSatellites) {
+  constructor(orbit, index, totalSatellites, modelData) {
     this.orbit = orbit;
     this.index = index;
     this.totalSatellites = totalSatellites;
+    this.modelData = modelData; // Add model data
 
     // Orbital parameters - use faster period for visualization (90 seconds instead of 90 minutes)
     this.orbitPeriod = 90; // 90 seconds for visible animation (real LEO would be 90 * 60)
@@ -16,33 +19,25 @@ export class AnimatedSatellite {
     this.orbitOffset = orbit.phaseOffset || 0;
 
     // Visual elements
-    this.placemark = null;
+    this.satelliteShape = null; // Changed from placemark
     this.createVisual();
   }
 
   /**
-   * Create the satellite visual
+   * Create the satellite visual using 3D model
    */
   createVisual() {
-    const attrs = new WorldWind.PlacemarkAttributes(null);
-
-    // Create glowing satellite icon
-    attrs.imageSource = this.createSatelliteCanvas(
-      80,
-      `rgba(${this.orbit.color.red * 255}, ${this.orbit.color.green * 255}, ${this.orbit.color.blue * 255}, 1)`,
-      `rgba(${this.orbit.color.red * 255}, ${this.orbit.color.green * 255}, ${this.orbit.color.blue * 255}, 0)`
-    );
-    attrs.imageScale = 0.3;
-    attrs.imageOffset = new WorldWind.Offset(
-      WorldWind.OFFSET_FRACTION, 0.5,
-      WorldWind.OFFSET_FRACTION, 0.5
-    );
-
     // Initial position
     const initialPos = this.calculatePosition(0);
 
-    this.placemark = new WorldWind.Placemark(initialPos, false, attrs);
-    this.placemark.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
+    // Create 3D satellite shape
+    this.satelliteShape = new SatelliteShape(
+      initialPos,
+      this.modelData,
+      this.orbit.color
+    );
+
+    this.satelliteShape.altitudeMode = WorldWind.RELATIVE_TO_GROUND;
   }
 
   /**
@@ -66,61 +61,33 @@ export class AnimatedSatellite {
    * Update animation (called every frame)
    */
   update(time) {
-    if (this.placemark) {
+    if (this.satelliteShape) {
       const newPos = this.calculatePosition(time);
-      this.placemark.position = newPos;
+      this.satelliteShape.updatePosition(newPos);
+
+      // Update heading based on orbital motion
+      const angle = ((time / this.orbitPeriod) * 360) % 360;
+      this.satelliteShape.updateHeading(angle);
     }
   }
 
   /**
-   * Get the renderable placemark
+   * Get the renderable shape
    */
   getRenderable() {
-    return this.placemark;
-  }
-
-  /**
-   * Create satellite icon canvas
-   */
-  createSatelliteCanvas(size, centerColor, edgeColor) {
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-
-    // Outer glow
-    const gradient = ctx.createRadialGradient(
-      size / 2, size / 2, 0,
-      size / 2, size / 2, size / 2
-    );
-    gradient.addColorStop(0, centerColor);
-    gradient.addColorStop(0.4, centerColor.replace(/[\d.]+\)$/, '0.8)'));
-    gradient.addColorStop(0.7, edgeColor.replace(/[\d.]+\)$/, '0.3)'));
-    gradient.addColorStop(1, edgeColor);
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-
-    // Bright center
-    const centerGradient = ctx.createRadialGradient(
-      size / 2, size / 2, 0,
-      size / 2, size / 2, size / 4
-    );
-    centerGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    centerGradient.addColorStop(0.5, centerColor.replace(/[\d.]+\)$/, '0.9)'));
-    centerGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-    ctx.fillStyle = centerGradient;
-    ctx.fillRect(0, 0, size, size);
-
-    return canvas;
+    return this.satelliteShape;
   }
 }
 
 /**
  * Create animated satellites for all orbits
  */
-export function createAnimatedSatellites(animationController) {
+export async function createAnimatedSatellites(animationController) {
+  // Load satellite model once, reuse for all instances
+  const loader = new OBJLoader();
+  const geometry = await loader.load('/space-satellite/source/Satellite2.obj');
+  const modelData = loader.toArrays();
+
   const orbits = [
     {
       name: 'Polar Orbit 1',
@@ -152,7 +119,7 @@ export function createAnimatedSatellites(animationController) {
 
   orbits.forEach(orbit => {
     for (let i = 0; i < orbit.sensorCount; i++) {
-      const satellite = new AnimatedSatellite(orbit, i, orbit.sensorCount);
+      const satellite = new AnimatedSatellite(orbit, i, orbit.sensorCount, modelData);
 
       // Register with animation controller
       if (animationController) {
