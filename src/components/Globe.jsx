@@ -97,7 +97,7 @@ function Globe({ layerStates = {} }) {
     // Create animated satellites layer (async due to model loading)
     const animatedSatellitesLayer = new WorldWind.RenderableLayer('Animated Satellites');
     layersRef.current.animatedSatellites = animatedSatellitesLayer;
-    animatedSatellitesLayer.enabled = false;
+    animatedSatellitesLayer.enabled = true;
     wwd.addLayer(animatedSatellitesLayer);
 
     // Load satellites asynchronously

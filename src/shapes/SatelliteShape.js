@@ -47,7 +47,7 @@ export class SatelliteShape {
     this.modelData = modelData; // { positions, normals, texCoords, vertexCount }
     this.color = color; // WorldWind.Color
     this.texturePath = texturePath || '/space-satellite/textures/Satellite2_albedo.jpg';
-    this.scale = 150000; // Scale factor for satellite size (150km) - 3x for visibility
+    this.scale = 200000; // Scale factor for satellite size (200km) - visible at Space-Based altitude
     this.heading = 0; // Rotation angle
 
     // WebGL resources (created on first render)

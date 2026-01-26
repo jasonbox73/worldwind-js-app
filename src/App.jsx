@@ -13,7 +13,7 @@ function App() {
     midcourse: true,
     spaceBased: true,
     sensors: true,
-    animatedSatellites: false,
+    animatedSatellites: true,
     animatedEvents: false,
     usBorder: true,
     overlay: true

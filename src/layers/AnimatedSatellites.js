@@ -13,8 +13,8 @@ export class AnimatedSatellite {
     this.totalSatellites = totalSatellites;
     this.modelData = modelData; // Add model data
 
-    // Orbital parameters - use faster period for visualization (180 seconds = 3 minutes)
-    this.orbitPeriod = 180; // 3 minutes for comfortable tracking (real LEO would be 90 * 60)
+    // Orbital parameters - slower period for easy tracking
+    this.orbitPeriod = 300; // 5 minutes per orbit for easy tracking
     this.phaseOffset = (index / totalSatellites) * Math.PI * 2; // Evenly spaced
     this.orbitOffset = orbit.phaseOffset || 0;
 
@@ -41,18 +41,33 @@ export class AnimatedSatellite {
   }
 
   /**
-   * Calculate satellite position at given time
+   * Calculate satellite position at given time using proper orbital mechanics
    */
   calculatePosition(time) {
-    const { inclination, altitude } = this.orbit;
+    const { inclination, altitude, ascendingNode } = this.orbit;
+    const inclinationRad = inclination * Math.PI / 180;
+    const raanRad = (ascendingNode || 0) * Math.PI / 180; // Right Ascension of Ascending Node
 
-    // Calculate angular position along orbit
-    const angle = ((time / this.orbitPeriod) * 360 + this.orbitOffset) % 360;
-    const totalAngle = angle + (this.phaseOffset * 180 / Math.PI);
+    // Calculate angular position along orbit (in radians)
+    const orbitAngle = ((time / this.orbitPeriod) * 2 * Math.PI) + this.phaseOffset;
 
-    // Calculate latitude and longitude based on orbital mechanics
-    const lat = Math.sin((totalAngle) * Math.PI / 180) * inclination;
-    const lon = ((totalAngle) % 360) - 180;
+    // Position in the orbital plane (before inclination)
+    const xOrbit = Math.cos(orbitAngle);
+    const yOrbit = Math.sin(orbitAngle);
+
+    // Apply inclination rotation (rotate around X-axis)
+    const x1 = xOrbit;
+    const y1 = yOrbit * Math.cos(inclinationRad);
+    const z1 = yOrbit * Math.sin(inclinationRad);
+
+    // Apply RAAN rotation (rotate around Z-axis for different orbital planes)
+    const x = x1 * Math.cos(raanRad) - y1 * Math.sin(raanRad);
+    const y = x1 * Math.sin(raanRad) + y1 * Math.cos(raanRad);
+    const z = z1;
+
+    // Convert Cartesian to geographic coordinates
+    const lat = Math.asin(z) * 180 / Math.PI;
+    const lon = Math.atan2(y, x) * 180 / Math.PI;
 
     return new WorldWind.Position(lat, lon, altitude);
   }
@@ -65,9 +80,15 @@ export class AnimatedSatellite {
       const newPos = this.calculatePosition(time);
       this.satelliteShape.updatePosition(newPos);
 
-      // Update heading based on orbital motion
-      const angle = ((time / this.orbitPeriod) * 360) % 360;
-      this.satelliteShape.updateHeading(angle);
+      // Calculate heading based on direction of travel
+      // Get position slightly ahead to determine heading
+      const futurePos = this.calculatePosition(time + 0.1);
+      const deltaLon = futurePos.longitude - newPos.longitude;
+      const deltaLat = futurePos.latitude - newPos.latitude;
+
+      // Calculate heading angle (0 = north, 90 = east)
+      let heading = Math.atan2(deltaLon, deltaLat) * 180 / Math.PI;
+      this.satelliteShape.updateHeading(heading);
     }
   }
 
@@ -90,28 +111,44 @@ export async function createAnimatedSatellites(animationController) {
 
   const orbits = [
     {
-      name: 'Polar Orbit 1',
-      inclination: 97,
-      altitude: 800000,
+      name: 'Orbit Plane 1',
+      inclination: 45,
+      altitude: 1500000,         // 1500 km - Space-Based Detection layer altitude
+      ascendingNode: 0,
       color: new WorldWind.Color(0.4, 0.8, 1.0, 0.9),
-      sensorCount: 4,
-      phaseOffset: 0
+      sensorCount: 6
     },
     {
-      name: 'Polar Orbit 2',
-      inclination: 82,
-      altitude: 1200000,
+      name: 'Orbit Plane 2',
+      inclination: 45,
+      altitude: 1500000,
+      ascendingNode: 60,
       color: new WorldWind.Color(0.5, 0.9, 1.0, 0.9),
-      sensorCount: 3,
-      phaseOffset: 45
+      sensorCount: 6
     },
     {
-      name: 'MEO Orbit',
-      inclination: 55,
-      altitude: 2000000,
-      color: new WorldWind.Color(0.6, 1.0, 1.0, 0.9),
-      sensorCount: 3,
-      phaseOffset: 90
+      name: 'Orbit Plane 3',
+      inclination: 45,
+      altitude: 1500000,
+      ascendingNode: 120,
+      color: new WorldWind.Color(1.0, 0.8, 0.4, 0.9),
+      sensorCount: 6
+    },
+    {
+      name: 'Orbit Plane 4',
+      inclination: 60,
+      altitude: 1500000,
+      ascendingNode: 30,
+      color: new WorldWind.Color(0.6, 1.0, 0.6, 0.9),
+      sensorCount: 6
+    },
+    {
+      name: 'Orbit Plane 5',
+      inclination: 60,
+      altitude: 1500000,
+      ascendingNode: 90,
+      color: new WorldWind.Color(1.0, 0.6, 0.8, 0.9),
+      sensorCount: 6
     }
   ];
 
