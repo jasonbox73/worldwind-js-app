@@ -6,6 +6,7 @@ export class OBJLoader {
   constructor() {
     this.vertices = [];
     this.normals = [];
+    this.texCoords = [];
     this.faces = [];
   }
 
@@ -44,6 +45,13 @@ export class OBJLoader {
           parseFloat(parts[3])
         ]);
       }
+      // Texture coordinates (vt u v)
+      else if (type === 'vt') {
+        this.texCoords.push([
+          parseFloat(parts[1]),
+          parseFloat(parts[2])
+        ]);
+      }
       // Faces (f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3)
       else if (type === 'f') {
         const face = [];
@@ -52,6 +60,7 @@ export class OBJLoader {
           const indices = parts[i].split('/');
           face.push({
             vertex: parseInt(indices[0]) - 1, // OBJ is 1-indexed
+            texCoord: indices[1] ? parseInt(indices[1]) - 1 : null,
             normal: indices[2] ? parseInt(indices[2]) - 1 : null
           });
         }
@@ -86,11 +95,12 @@ export class OBJLoader {
 
   /**
    * Convert parsed data to flat arrays for WebGL
-   * @returns {Object} { positions: Float32Array, normals: Float32Array }
+   * @returns {Object} { positions: Float32Array, normals: Float32Array, texCoords: Float32Array }
    */
   toArrays() {
     const positions = [];
     const normals = [];
+    const texCoords = [];
 
     // Convert faces to flat vertex arrays
     for (const face of this.faces) {
@@ -104,12 +114,20 @@ export class OBJLoader {
         } else {
           normals.push(0, 0, 1); // Default normal
         }
+
+        if (vertex.texCoord !== null && this.texCoords[vertex.texCoord]) {
+          const t = this.texCoords[vertex.texCoord];
+          texCoords.push(t[0], t[1]);
+        } else {
+          texCoords.push(0, 0); // Default UV
+        }
       }
     }
 
     return {
       positions: new Float32Array(positions),
       normals: new Float32Array(normals),
+      texCoords: new Float32Array(texCoords),
       vertexCount: positions.length / 3
     };
   }

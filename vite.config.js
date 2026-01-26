@@ -7,5 +7,13 @@ export default defineConfig({
   // Ensure worldwindjs is treated as an external dependency correctly
   optimizeDeps: {
     include: ['worldwindjs']
+  },
+  // Serve space-satellite folder as static assets
+  publicDir: 'public',
+  server: {
+    fs: {
+      // Allow serving files from space-satellite directory
+      allow: ['..', 'space-satellite']
+    }
   }
 });
