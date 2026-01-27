@@ -41,6 +41,9 @@ function Globe({ layerStates = {} }) {
       return;
     }
 
+    // Configure WorldWind image path for view controls
+    WorldWind.configuration.baseUrl = '/';
+
     // Create the WorldWindow instance attached to our canvas
     const wwd = new WorldWind.WorldWindow(canvas);
     wwRef.current = wwd;
@@ -130,6 +133,8 @@ function Globe({ layerStates = {} }) {
     layersRef.current.overlay = overlayLayer;
     wwd.addLayer(overlayLayer);
 
+    // Add view controls layer (on-screen navigation controls)
+    wwd.addLayer(new WorldWind.ViewControlsLayer(wwd));
 
     // Set optimal camera position for dramatic view
     wwd.navigator.range = 15000000; // Closer view
