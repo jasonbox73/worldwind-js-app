@@ -32,6 +32,25 @@ html, body, #root {
   cursor: grabbing;
 }
 
+/* Custom coordinate display */
+.coords-display {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  display: flex;
+  gap: 20px;
+  padding: 8px 16px;
+  background: rgba(0, 10, 30, 0.85);
+  border: 1px solid rgba(100, 150, 255, 0.3);
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 14px;
+  color: #FFD700;
+  pointer-events: none;
+  z-index: 100;
+}
+
+
 /* Smooth fade-in animation */
 @keyframes fadeIn {
   from {

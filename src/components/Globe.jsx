@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import WorldWind from 'worldwindjs';
 import { createOverlayLayer } from '../layers/createOverlayLayer';
 import { createDefenseDomes } from '../layers/createDefenseDomes';
@@ -25,6 +25,8 @@ function Globe({ layerStates = {} }) {
   const animationControllerRef = useRef(null);
   // Ref to store animated detection events
   const animatedEventsRef = useRef([]);
+  // State for coordinate display
+  const [coords, setCoords] = useState(null);
 
   // Initialize WorldWind on mount
   useEffect(() => {
@@ -128,6 +130,7 @@ function Globe({ layerStates = {} }) {
     layersRef.current.overlay = overlayLayer;
     wwd.addLayer(overlayLayer);
 
+
     // Set optimal camera position for dramatic view
     wwd.navigator.range = 15000000; // Closer view
     wwd.navigator.tilt = 65; // More dramatic tilt
@@ -173,13 +176,70 @@ function Globe({ layerStates = {} }) {
     wwd.redraw();
   }, [layerStates]);
 
+  // Handle mouse move for coordinate display
+  const handleMouseMove = useCallback((event) => {
+    const wwd = wwRef.current;
+    if (!wwd) return;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Pick terrain at mouse position
+    const pickList = wwd.pick(wwd.canvasCoordinates(x, y));
+    const terrainObject = pickList.terrainObject();
+
+    if (terrainObject) {
+      const pos = terrainObject.position;
+      setCoords({
+        lat: pos.latitude,
+        lon: pos.longitude,
+        elev: pos.altitude
+      });
+    } else {
+      setCoords(null);
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setCoords(null);
+  }, []);
+
+  // Format coordinate for display
+  const formatCoord = (value, isLat) => {
+    const abs = Math.abs(value);
+    const deg = Math.floor(abs);
+    const min = ((abs - deg) * 60).toFixed(1);
+    const dir = isLat ? (value >= 0 ? 'N' : 'S') : (value >= 0 ? 'E' : 'W');
+    return `${deg}°${min}'${dir}`;
+  };
+
+  const formatElev = (meters) => {
+    if (meters < 1000) {
+      return `${Math.round(meters)} m`;
+    }
+    return `${(meters / 1000).toFixed(1)} km`;
+  };
+
   return (
-    <canvas
-      ref={canvasRef}
-      className="globe-canvas"
-    >
-      Your browser does not support HTML5 Canvas.
-    </canvas>
+    <>
+      <canvas
+        ref={canvasRef}
+        className="globe-canvas"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
+        Your browser does not support HTML5 Canvas.
+      </canvas>
+      {coords && (
+        <div className="coords-display">
+          <span>{formatCoord(coords.lat, true)}</span>
+          <span>{formatCoord(coords.lon, false)}</span>
+          <span>Elev {formatElev(coords.elev)}</span>
+        </div>
+      )}
+    </>
   );
 }
 
