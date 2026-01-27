@@ -36,7 +36,8 @@ html, body, #root {
 .coords-display {
   position: absolute;
   bottom: 10px;
-  left: 10px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 20px;
   padding: 8px 16px;
