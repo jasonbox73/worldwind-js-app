@@ -53,6 +53,7 @@ App.jsx (root state management)
    - Layer references (stored in `layersRef.current`)
    - AnimationController instance (stored in `animationControllerRef.current`)
    - Animated objects (stored in `animatedEventsRef.current`)
+   - Coordinate display state (lat/lon/elevation on mouse hover)
 
 3. **Layer toggling**: User clicks ControlPanel → App updates state → Globe's useEffect (lines 144-161) syncs `layer.enabled` → WorldWindow redraws
 
@@ -124,6 +125,14 @@ App.jsx (root state management)
   - Opacity fades as rings expand (distance-based alpha)
   - Center marker also pulses in scale
   - Uses `updateRingGeometry()` to recalculate ring positions every frame
+
+**Coordinates Display** (Globe.jsx lines 184-228):
+- Real-time display of cursor position over the globe
+- Uses WorldWind terrain picking (`wwd.pick()`) to get geographic position
+- Shows latitude, longitude (in degrees/minutes format), and elevation
+- Positioned at bottom center of the screen
+- Gold text (#FFD700) with semi-transparent dark background
+- Hidden when cursor is off the globe or over space
 
 **Integration Flow** (Globe.jsx lines 70-116):
 1. Create AnimationController
@@ -204,7 +213,7 @@ src/
 │   └── OBJLoader.js                  # Wavefront OBJ file parser
 ├── App.jsx                           # Root component with layer state management
 ├── main.jsx                          # React entry point
-└── index.css                         # Global styles (dark theme, canvas sizing)
+└── index.css                         # Global styles (dark theme, canvas sizing, coordinates display)
 ```
 
 ## Color Coding System
@@ -239,6 +248,11 @@ Fill: rgba(255, 204, 77, 0.08) - subtle interior fill
 Polar Orbit 1 (800km): rgba(102, 204, 255, 0.9)
 Polar Orbit 2 (1200km): rgba(128, 230, 255, 0.9)
 MEO Orbit (2000km): rgba(153, 255, 255, 0.9)
+
+// Coordinates Display (bottom center HUD)
+Text: #FFD700 - gold for readability
+Background: rgba(0, 10, 30, 0.85) - dark semi-transparent
+Border: rgba(100, 150, 255, 0.3) - subtle blue accent
 ```
 
 ## Performance Targets
@@ -283,6 +297,7 @@ wwd.navigator.lookAtLocation.longitude = -97;
 - Zoom: Mouse wheel
 - Tilt: Right-click and drag
 - Mobile: Touch and pinch gestures
+- Coordinates: Displayed at bottom center on mouse hover over terrain
 
 **Dependencies**:
 - `worldwindjs@^1.7.0` - NASA's WebGL-based 3D globe library
