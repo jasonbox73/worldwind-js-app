@@ -173,18 +173,8 @@ function addUSBorderWithHalo(layer) {
     layer.addRenderable(path);
   });
 
-  // Add a subtle interior fill for additional glow effect
-  const fillPositions = US_BOUNDARY_COORDS.map(([lat, lon]) =>
-    new WorldWind.Location(lat, lon)
-  );
-
-  const fillAttrs = new WorldWind.ShapeAttributes(null);
-  fillAttrs.interiorColor = new WorldWind.Color(1.0, 0.8, 0.3, 0.08);
-  fillAttrs.outlineColor = new WorldWind.Color(0, 0, 0, 0); // No outline
-  fillAttrs.drawOutline = false;
-
-  const fillPolygon = new WorldWind.SurfacePolygon(fillPositions, fillAttrs);
-  layer.addRenderable(fillPolygon);
+  // NOTE: SurfacePolygon interior fill removed due to WorldWind tile coordinate bug
+  // that caused rendering artifacts in unrelated areas (e.g., Pacific Ocean)
 }
 
 export default createUSBorderLayer;
