@@ -123,9 +123,8 @@ function createHemisphericalDome(centerLat, centerLon, radiusKm, altitudeKm, fil
     shapes.push(...parallel);
   }
 
-  // Add surface coverage circle at base with fill
-  const baseCircle = createBaseCircle(centerLat, centerLon, angularRadius, fillColor);
-  shapes.push(baseCircle);
+  // NOTE: SurfacePolygon base fill removed due to WorldWind tile coordinate bug
+  // that caused rendering artifacts. The dome outline arcs remain.
 
   return shapes;
 }
