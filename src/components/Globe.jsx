@@ -56,7 +56,7 @@ function Globe({ layerStates = {} }) {
     atmosphereLayer.lightLocation = WorldWind.SunPosition.getAsGeographicLocation(new Date());
 
     wwd.addLayer(starFieldLayer);
-    wwd.addLayer(new WorldWind.BMNGLayer());
+    wwd.addLayer(new WorldWind.BMNGOneImageLayer());
     wwd.addLayer(atmosphereLayer);
 
     // Create defense dome layers
