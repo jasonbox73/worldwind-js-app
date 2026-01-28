@@ -145,7 +145,7 @@ App.jsx (root state management)
 
 WorldWind renders layers in order added. Current stack (bottom to top):
 1. **StarFieldLayer** (always visible) - background stars
-2. **BMNGLayer** (always visible) - Blue Marble earth imagery
+2. **BMNGOneImageLayer** (always visible) - Blue Marble single-image earth imagery
 3. **AtmosphereLayer** (always visible) - atmospheric glow effect
 4. **Terminal Defense** (toggleable) - gold dome
 5. **Midcourse Defense** (toggleable) - blue dome
@@ -159,6 +159,13 @@ WorldWind renders layers in order added. Current stack (bottom to top):
 **Note**: Both static sensors (layer 7) and animated satellites (layer 9) can be enabled simultaneously - they represent different visualization modes. Animated satellites use custom WebGL rendering with 3D OBJ models.
 
 ### Known Issues & Debugging
+
+**Tile Alignment Bug (WorldWind Library Issue)**:
+- WorldWind's `TiledImageLayer` subclasses (`BMNGLayer`, `BMNGLandsatLayer`, `BingAerialLayer`) have severe tile coordinate calculation bugs
+- Symptoms: Continents appear in wrong positions, northern/southern hemisphere imagery misaligned
+- Workaround: Use `BMNGOneImageLayer` which renders a single pre-rendered Earth image
+- Tradeoff: Lower resolution when zoomed in closely (single image vs progressive tile loading)
+- Root cause: Likely related to [WorldWind Issue #793](https://github.com/NASAWorldWind/WebWorldWind/issues/793) (coordinate precision)
 
 **Animation System (Working as of v2.3.0)**:
 - ✅ Animation loop functioning correctly
@@ -275,6 +282,12 @@ This is an **unclassified** planning and visualization tool:
 - Safe for public demonstration and briefings
 
 ## Technical Notes
+
+**Imagery Layer Selection**:
+- Uses `BMNGOneImageLayer` instead of `BMNGLayer` due to tile alignment bugs in WorldWind
+- `BMNGLayer`, `BMNGLandsatLayer`, and `BingAerialLayer` all exhibit tile misalignment issues
+- `BMNGOneImageLayer` bypasses the tile system with a single pre-rendered Earth image
+- Acceptable for this application's typical zoom levels (strategic/continental view)
 
 **WorldWind Coordinate System**:
 - Positions: `new WorldWind.Position(latitude, longitude, altitude)`
