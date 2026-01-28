@@ -62,9 +62,8 @@ App.jsx (root state management)
 **Hemispherical Dome Construction** (`createDefenseDomes.js`):
 - Each dome is created using spherical geometry calculations (great circle math using haversine formulas)
 - 24 meridian arcs (vertical lines from base to apex) + 8 parallel arcs (horizontal circles at various heights)
-- Base coverage uses `SurfacePolygon` with semi-transparent fill at 5000m altitude
 - Glow effects achieved by layering multiple `Path` objects with decreasing alpha (`addGlowingPath` helper function)
-- Each dome returns an array of WorldWind renderables (paths + base polygon)
+- Each dome returns an array of WorldWind Path renderables (no SurfacePolygon due to tile bug)
 
 **Defense Layer Specifications**:
 - **Terminal Defense**: 2200km radius, 100km altitude, gold color (#FFC033), represents endo-atmospheric interception (50-150km)
@@ -85,9 +84,9 @@ App.jsx (root state management)
   - 6 outer halo layers (wide 40-12px, very transparent 3-15% alpha)
   - 4 middle glow layers (medium 10-5px, medium opacity 20-50% alpha)
   - 3 core layers (narrow 4-2px, bright 70-100% alpha)
-- **Interior fill**: Subtle SurfacePolygon with 8% alpha for warm glow
 - ~180 coordinate points for detailed border outline
 - Base altitude: 10,000m with offsets up to 5,000m for halo depth
+- Note: Interior fill removed due to WorldWind SurfacePolygon tile bug
 
 **3D Model Rendering** (`SatelliteShape.js`, `OBJLoader.js`):
 - **OBJLoader**: Parses Wavefront OBJ files into WebGL-ready geometry
@@ -160,12 +159,19 @@ WorldWind renders layers in order added. Current stack (bottom to top):
 
 ### Known Issues & Debugging
 
-**Tile Alignment Bug (WorldWind Library Issue)**:
-- WorldWind's `TiledImageLayer` subclasses (`BMNGLayer`, `BMNGLandsatLayer`, `BingAerialLayer`) have severe tile coordinate calculation bugs
-- Symptoms: Continents appear in wrong positions, northern/southern hemisphere imagery misaligned
-- Workaround: Use `BMNGOneImageLayer` which renders a single pre-rendered Earth image
-- Tradeoff: Lower resolution when zoomed in closely (single image vs progressive tile loading)
-- Root cause: Likely related to [WorldWind Issue #793](https://github.com/NASAWorldWind/WebWorldWind/issues/793) (coordinate precision)
+**Tile Coordinate Bug (WorldWind Library Issue)**:
+- WorldWind's internal tile coordinate system has severe calculation bugs
+- **Affected components**:
+  - `TiledImageLayer` subclasses (`BMNGLayer`, `BMNGLandsatLayer`, `BingAerialLayer`)
+  - `SurfacePolygon` renderables (used for filled shapes)
+- **Symptoms**: Tiles/polygons appear in wrong positions, rendering artifacts in unrelated areas
+- **Workarounds applied**:
+  - Use `BMNGOneImageLayer` instead of `BMNGLayer` (single image, no tiles)
+  - Removed `SurfacePolygon` fills from defense domes and US border layer
+  - Use `Path` renderables for outlines (these work correctly)
+- **Tradeoff**: Lower resolution imagery when zoomed in; no filled regions on domes/border
+- **Root cause**: Likely related to [WorldWind Issue #793](https://github.com/NASAWorldWind/WebWorldWind/issues/793) (coordinate precision)
+- **Rule**: Do NOT use `SurfacePolygon` or tiled imagery layers in this project
 
 **Animation System (Working as of v2.3.0)**:
 - ✅ Animation loop functioning correctly
