@@ -2,7 +2,7 @@
 
 A geospatial, multi-domain visualization platform for modeling and analyzing layered national missile defense architecture over the continental United States. Built with NASA WorldWind and React.
 
-![Golden Dome Visualization](docs/golden-dome-preview.png)
+![Golden Dome Visualization](Golden-Dome-Defense.png)
 
 ## Overview
 
